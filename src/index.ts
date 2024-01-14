@@ -5,11 +5,16 @@ import { natsWrapper } from "./nats-wrapper";
 import { Stan } from "node-nats-streaming";
 import { TicketCreatedListener } from "./events/listeners/ticket-created-listener";
 import { TicketUpdatedListener } from "./events/listeners/ticket-updated-listener";
+import { ExpirationCompleteListener } from "./events/listeners/expiration-complete-listener";
+import { PaymentCreatedListener } from "./events/listeners/payment-created-listener";
 
 const initilizeListener = (client: Stan) => {
   new TicketCreatedListener(client).listen();
   new TicketUpdatedListener(client).listen();
-  console.log("Started the listeners");
+  new ExpirationCompleteListener(client).listen();
+  new PaymentCreatedListener(client).listen();
+
+  console.log("Started all the listeners");
 };
 
 const initilizeNATS = async () => {

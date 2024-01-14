@@ -1,9 +1,14 @@
+import mongoose from "mongoose";
 import request from "supertest";
 import { app } from "../../app";
 import { Ticket } from "../../models/ticket";
 
 it("returns an error if the ticket does to exist", async () => {
-  const ticket = Ticket.build({ title: "concert", price: 20 });
+  const ticket = Ticket.build({
+    id: new mongoose.Types.ObjectId().toHexString(),
+    title: "concert",
+    price: 20,
+  });
   await ticket.save();
 
   const user = global.signin();
@@ -24,7 +29,11 @@ it("returns an error if the ticket does to exist", async () => {
 });
 
 it("returns an error if one user tries to fetch another user's order", async () => {
-  const ticket = Ticket.build({ title: "concert", price: 20 });
+  const ticket = Ticket.build({
+    id: new mongoose.Types.ObjectId().toHexString(),
+    title: "concert",
+    price: 20,
+  });
   await ticket.save();
 
   const { body: order } = await request(app)

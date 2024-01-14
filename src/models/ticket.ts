@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 import { Order, OrderStatus } from "./order";
 
+import { updateIfCurrentPlugin } from "mongoose-update-if-current";
+
 // An interface that describes the properties
 // that are required to create a new Ticket
 interface TicketAttrs {
-  id?: string;
+  id: string;
   title: string;
   price: number;
 }
@@ -14,6 +16,7 @@ interface TicketAttrs {
 export interface TicketDoc extends mongoose.Document {
   title: string;
   price: number;
+  version: number;
   isReserved(): Promise<boolean>;
 }
 
@@ -21,6 +24,10 @@ export interface TicketDoc extends mongoose.Document {
 // that a Ticket Model has
 interface TicketModel extends mongoose.Model<TicketDoc> {
   build(attrs: TicketAttrs): TicketDoc;
+  findByEvent(event: {
+    id: string;
+    version: number;
+  }): Promise<TicketDoc | null>;
 }
 
 const ticketSchema = new mongoose.Schema(
@@ -45,11 +52,34 @@ const ticketSchema = new mongoose.Schema(
   }
 );
 
+ticketSchema.set("versionKey", "version");
+ticketSchema.plugin(updateIfCurrentPlugin);
+
+// // If we don't want to use the plugin we have to manually look for the previous version for concurrency
+// ticketSchema.pre("save", function (done) {
+//   console.log(this.$where, this.get("version"));
+//   this.$where = {
+//     version: this.get("version") - 1,
+//   };
+
+//   done();
+// });
+
 ticketSchema.statics.build = (attrs: TicketAttrs) => {
   return new Ticket({
     _id: attrs.id,
     title: attrs.title,
-    price: attrs.price
+    price: attrs.price,
+  });
+};
+
+ticketSchema.statics.findByEvent = async (event: {
+  id: string;
+  version: number;
+}) => {
+  return Ticket.findOne({
+    _id: event.id,
+    version: event.version - 1,
   });
 };
 
